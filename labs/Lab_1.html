@@ -126,51 +126,18 @@ $(document).ready(function () {
 <ol style="list-style-type: decimal">
 <li>Develop a hypothesis about how some ego-network measure (e.g., degree/size, density, diversity, average-level of alters, homophily, structural holes, or brokerage) may be related to some other variable of interest.</li>
 </ol>
-<pre class="r"><code>laz_att &lt;- read.csv(&quot;~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Lazega_Attributes.csv&quot;, header = TRUE)
-
-head(laz_att)</code></pre>
-<pre><code>##   ID status gender office seniority age practice lawschool
-## 1  1      1      1      1        31  64        1         1
-## 2  2      1      1      1        32  62        2         1
-## 3  3      1      1      2        13  67        1         1
-## 4  4      1      1      1        31  59        2         3
-## 5  5      1      1      2        31  59        1         2
-## 6  6      1      1      2        29  55        1         1</code></pre>
-<pre class="r"><code>laz_fri &lt;- read.csv(&quot;~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Lazega_Friends.csv&quot;, header = TRUE)
-
-head(laz_fri)</code></pre>
-<pre><code>##   X1 X2 X3 X4 X5 X6 X7 X8 X9 X10 X11 X12 X13 X14 X15 X16 X17 X18 X19 X20
-## 1  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0   0   0   0   0   0
-## 2  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0   0   0   0   0   0
-## 3  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0   0   0   0   0   0
-## 4  0  0  0  0  0  0  0  0  0   0   0   0   1   0   0   0   0   0   0   0
-## 5  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0   0   0   1   0   0
-## 6  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0   0   0   0   0   0
-##   X21 X22 X23 X24 X25 X26 X27 X28 X29 X30 X31 X32 X33 X34 X35 X36 X37 X38
-## 1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-## 2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-## 3   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-## 4   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-## 5   0   0   0   0   0   0   0   1   0   0   1   1   0   0   1   0   0   0
-## 6   0   0   0   0   0   0   0   0   0   1   0   0   0   0   0   0   0   0
-##   X39 X40 X41 X42 X43 X44 X45 X46 X47 X48 X49 X50 X51 X52 X53 X54 X55 X56
-## 1   0   0   1   0   0   0   0   0   0   0   0   0   0   1   0   0   0   1
-## 2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-## 3   0   0   1   0   0   0   0   0   0   0   1   0   0   1   0   1   1   0
-## 4   0   0   1   0   0   0   0   1   0   0   0   0   0   1   0   1   0   0
-## 5   0   0   0   1   0   0   0   0   0   0   0   1   1   1   0   1   0   1
-## 6   0   0   0   0   0   0   0   0   0   0   0   1   1   0   0   1   0   0
-##   X57 X58 X59 X60 X61 X62 X63 X64 X65 X66 X67 X68 X69 X70 X71
-## 1   1   1   0   0   0   0   0   1   1   0   0   0   0   0   0
-## 2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
-## 3   0   1   0   0   0   0   0   1   1   0   0   0   0   0   0
-## 4   0   0   0   1   1   1   0   1   0   0   0   0   0   0   0
-## 5   0   0   1   0   0   0   0   0   1   0   0   0   0   0   0
-## 6   0   1   0   0   0   0   0   0   0   0   0   0   0   0   0</code></pre>
+<p>Degree centrality could be related to happiness.</p>
+<pre class="r"><code>g &lt;- read.csv(&quot;~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/gss-nets.csv&quot;, header = TRUE)</code></pre>
 <ol start="2" style="list-style-type: decimal">
-<li><p>Explain why you think these two variables should be related.</p></li>
-<li><p>Tell me about your variables. What is your dependent variable? What are your independent variables? How are they coded? How are they recoded? How are they calculated, if appropriate?</p></li>
-<li><p>Present your initial results from your first few models. What do they indicate about your hypothesis?</p></li>
+<li>Explain why you think these two variables should be related.</li>
+</ol>
+<p>Degree centrality count the number of alters adjacent to ego, irrespective of direction and value of ties, and measures one’s level of involvement or activity in the network. It’s possible that if a person has higher degree centrality, which means more connected to adjacent alters in the network, he or she would feel happier.</p>
+<ol start="3" style="list-style-type: decimal">
+<li>Tell me about your variables. What is your dependent variable? What are your independent variables? How are they coded? How are they recoded? How are they calculated, if appropriate?</li>
+</ol>
+<p>Dependent variable <em>happy</em> which measures general happiness.<br />
+Indepdent variable <em>degree</em> which was coded from 4. Present your initial results from your first few models. What do they indicate about your hypothesis?</p>
+<ol start="5" style="list-style-type: decimal">
 <li><p>Consider alternate specifications of your variables (i.e., recodings of various kinds). Consider interactions among your variables.</p></li>
 <li><p>Give your best conclusion as to whether your initial hypothesis held up, and if not, why not.</p></li>
 </ol>

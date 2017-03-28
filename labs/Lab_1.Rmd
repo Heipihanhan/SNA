@@ -1,0 +1,33 @@
+---
+title: "Lab_01_QMSSG4062"
+author: "Jianghanhan Li"
+date: "Feb 13, 2017"
+output: html_document
+---
+
+1. Develop a hypothesis about how some ego-network measure (e.g., degree/size, density, diversity, average-level of alters, homophily, structural holes, or brokerage) may be related to some other variable of interest. 
+
+
+```{r}
+g <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/gss-nets.csv", header = TRUE)
+
+```
+
+```{r}
+
+```
+
+2. Explain why you think these two variables should be related. 
+
+Degree centrality count the number of alters adjacent to ego, irrespective of direction and value of ties, and measures one's level of involvement or activity in the network. It's possible that if a person has higher degree centrality, which means  more connected to adjacent alters in the network, he or she would feel happier. 
+
+3. Tell me about your variables. What is your dependent variable? What are your independent variables? How are they coded? How are they recoded? How are they calculated, if appropriate? 
+
+Dependent variable _happy_ which measures general happiness.  
+Indepdent variable _degree_ which count the number of 
+
+4. Present your initial results from your first few models. What do they indicate about your hypothesis? 
+
+5. Consider alternate specifications of your variables (i.e., recodings of various kinds). Consider interactions among your variables. 
+
+6. Give your best conclusion as to whether your initial hypothesis held up, and if not, why not. 
