@@ -1,0 +1,17 @@
+---
+title: "Lab_3"
+author: "Jianghanhan Li"
+date: "5/9/2017"
+output: html_document
+---
+Find a complete social network, preferably one with at least some attributes about the nodes with it.
+
+#####1. Describe the social network(s) to me, in terms of how it was collected, what it represents and so forth. Also give me basic topography of the network: the nature of the ties; direction of ties; overall density; and if attributes are with the network, the distribution of the categories and variables of those attributes.
+
+#####2. Run the Girvan-Newman community detection algorithm. Then run the random walk community detection algorithm.
+
+#####3. Tell me how many groups each algorithm finds. Analyze how similar the two partitioning algorithms are in terms of putting nodes into groups with each other.
+
+#####4. Visualize the network (either in R or Gephi), coloring the nodes by either Girvan-Newman grouping or the random walk grouping.
+
+#####5. Tell me anything else about whether the partitioning makes sense, based on attributes or who the nodes are, and so on.
