@@ -16,7 +16,62 @@ plot(Lazega_Friends_Matrix_Graph)
 ```
 
 ```{r}
+Lazega_Attributes <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Lazega_Attributes.csv", header = TRUE)
+head(Lazega_Attributes)
+```
+```{r}
+V(Lazega_Friends_Matrix_Graph)$name
+V(Lazega_Friends_Matrix_Graph)$status <- Lazega_Attributes$status[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
+V(Lazega_Friends_Matrix_Graph)$gender <- Lazega_Attributes$gender[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
+V(Lazega_Friends_Matrix_Graph)$office <- Lazega_Attributes$office[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
+V(Lazega_Friends_Matrix_Graph)$seniority <- Lazega_Attributes$seniority[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
+V(Lazega_Friends_Matrix_Graph)$age <- Lazega_Attributes$age[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
+Lazega_Friends_Matrix_Graph$practice <- Lazega_Attributes$practice[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
+V(Lazega_Friends_Matrix_Graph)$lawschool <- Lazega_Attributes$lawschool[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
+Lazega_Edge <- get.edgelist(Lazega_Friends_Matrix_Graph)
+```
 
+```{r eval=FALSE}
+library(devtools)
+source_gist(4676064)
+```
+
+```{r}
+Lazega_Dataframe <- as.data.frame(Lazega_Edge)
+head(Lazega_Dataframe)
+
+# captrue the relationships in undirected ties
+Lazega_Edge_2 <- as.data.frame(Lazega_Dataframe[c(2, 1)]) # reverse the order of the pairs
+head(Lazega_Edge_2)
+
+library(plyr)
+Lazega_Edge_2 <- rename(Lazega_Edge_2, c("V2" = "V1", "V1" = "V2")) 
+head(Lazega_Edge_2)
+Lazega_Edge_Undirected <- rbind(Lazega_Edge, Lazega_Edge_2) # append the 2 edgelists together
+Lazega_Edge_Undirected <- rename(Lazega_Edge_Undirected, c("V1" = "ID1", "V2" = "ID2"))
+head(Lazega_Edge_Undirected)
+```
+
+```{r}
+id1 <- rename(Lazega_Attributes, c("ID"="ID1", "status"="status1", "gender"="gender1", "office"="office1", "seniority"="seniority1", "age"="age1", "practice"="practice1", "lawschool"="lawschool1"))
+
+id2 <- rename(Lazega_Attributes, c("ID"="ID2", "status"="status2", "gender"="gender2", "office"="office2", "seniority"="seniority2", "age"="age2", "practice"="practice2", "lawschool"="lawschool2"))
+all <- merge(Lazega_Edge_Undirected, id1, by = c("ID1"))
+all <- merge(all, id2, by = c("ID2"))
+head(all)
+```
+
+```{r}
+all$homo_gender <- ifelse("all$gender1" == "all$gender2", 1, 0)
+all$homo_status <- ifelse("all$status1" == "all$status2", 1, 0)
+as.numeric.factor <- function(x){as.numeric(levels(x))[x]}
+all$ID1 <- as.numeric.factor(all$ID1)
+all$ID2 <- as.numeric.factor(all$ID2)
+```
+
+```{r}
+aggdata <- aggregate(all, by = list(all$ID1), FUN = mean, na.rm = TRUE)
+head(aggdata)
 ```
 
 2. Explain why you think these two variables should be related. 
