@@ -7,10 +7,12 @@ output: html_document
 
 1. Develop a hypothesis about how some ego-network measure (e.g., degree/size, density, diversity, average-level of alters, homophily, structural holes, or brokerage) may be related to some other variable of interest. 
 
-
 ```{r}
-g <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/gss-nets.csv", header = TRUE)
-
+library(igraph)
+Lazega_Friends <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Lazega_Friends.csv", header = TRUE, row.names = NULL, check.names = FALSE)
+Lazega_Friends_Matrix <- as.matrix(Lazega_Friends)
+Lazega_Friends_Matrix_Graph <- graph.adjacency(Lazega_Friends_Matrix, mode = "undirected", weighted = NULL)
+plot(Lazega_Friends_Matrix_Graph)
 ```
 
 ```{r}
