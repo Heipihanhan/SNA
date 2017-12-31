@@ -5,89 +5,126 @@ date: "Feb 13, 2017"
 output: html_document
 ---
 
-##### 1. Develop a hypothesis about how some ego-network measure (e.g., degree/size, density, diversity, average-level of alters, homophily, structural holes, or brokerage) may be related to some other variable of interest. 
+#### 1. Develop a hypothesis about how some ego-network measure (e.g., degree/size, density, diversity, average-level of alters, homophily, structural holes, or brokerage) may be related to some other variable of interest. 
 
-I would like to look at the Lazega lawers datasets, which include a network dataset and an attribute dataset. The network dataset Lazega_Friends.csv is a 71 x 71 matrix, containing information about the existence of ties between lawyers in Lazega law firm. The attribute dataset Lazega_Attribute.csv is a data frame, containing 7 attribute variables *seniority, status, gender, office, age, practice, law school*. 
+*Hypothesis* - Is happiness assocaited with the size of people's network ? Do happier people tend to have a bigger network? 
 
-I think degree centrality 
-```{r}
-library(igraph)
-Lazega_Friends <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Lazega_Friends.csv", header = TRUE, row.names = NULL, check.names = FALSE)
-Lazega_Friends_Matrix <- as.matrix(Lazega_Friends)
-Lazega_Friends_Matrix_Graph <- graph.adjacency(Lazega_Friends_Matrix, mode = "undirected", weighted = NULL)
-plot(Lazega_Friends_Matrix_Graph)
-```
+
+#### 2. Explain why you think these two variables should be related. 
 
 ```{r}
-Lazega_Attributes <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Lazega_Attributes.csv", header = TRUE)
-head(Lazega_Attributes)
-```
-```{r}
-V(Lazega_Friends_Matrix_Graph)$name
-V(Lazega_Friends_Matrix_Graph)$status <- Lazega_Attributes$status[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
-V(Lazega_Friends_Matrix_Graph)$gender <- Lazega_Attributes$gender[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
-V(Lazega_Friends_Matrix_Graph)$office <- Lazega_Attributes$office[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
-V(Lazega_Friends_Matrix_Graph)$seniority <- Lazega_Attributes$seniority[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
-V(Lazega_Friends_Matrix_Graph)$age <- Lazega_Attributes$age[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
-Lazega_Friends_Matrix_Graph$practice <- Lazega_Attributes$practice[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
-V(Lazega_Friends_Matrix_Graph)$lawschool <- Lazega_Attributes$lawschool[match(V(Lazega_Friends_Matrix_Graph)$name, Lazega_Attributes$ID)]
-Lazega_Edge <- get.edgelist(Lazega_Friends_Matrix_Graph)
+d <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/gss-nets.csv")
 ```
 
-```{r eval=FALSE}
-library(devtools)
-source_gist(4676064)
+
+```{r}
+library(gmodels)
+CrossTable(d$numgiven, d$happy)
 ```
 
 ```{r}
-Lazega_Dataframe <- as.data.frame(Lazega_Edge)
-head(Lazega_Dataframe)
+library(gplots)
+plotmeans(d$numgiven ~ d$happy, connect = T)
+```
 
-# captrue the relationships in undirected ties
-Lazega_Edge_2 <- as.data.frame(Lazega_Dataframe[c(2, 1)]) # reverse the order of the pairs
-head(Lazega_Edge_2)
 
-library(plyr)
-Lazega_Edge_2 <- rename(Lazega_Edge_2, c("V2" = "V1", "V1" = "V2")) 
-head(Lazega_Edge_2)
-Lazega_Edge_Undirected <- rbind(Lazega_Edge, Lazega_Edge_2) # append the 2 edgelists together
-Lazega_Edge_Undirected <- rename(Lazega_Edge_Undirected, c("V1" = "ID1", "V2" = "ID2"))
-head(Lazega_Edge_Undirected)
+From the graph above we see an apprent downward trend between the two variables `happy` and `numgiven`. Note that `happy` was coded in a way as 1 means very happy and 3 means not very happy. So it seems the happier people are, the larger their size of network tend to be. We'll see more details in the regression analysis later. 
+
+
+#### 3. Tell me about your variables. What is your dependent variable? What are your independent variables? How are they coded? How are they recoded? How are they calculated, if appropriate? 
+
+Dependent varaible `numgiven` measures the number of people whom you discussed matters important to you. Name up to a maximum of 6 people. 
+Independent variable `happy` measures the general happiness of a person. 1 Very happy. 2 Pretty happy. 3 Not too happy. 
+
+I will also add other factors as a control mechanism: 
+`age` measures age of respondent
+`educ` measures the educational level 
+`sex` measures sex of the respondent 
+`realinc` measures family income in constant dollar
+
+```{r}
+# reverse coding for variable happy
+d$happiness <- 4 - d$happy
+# make a dummy variable for variable sex
+d$gender <- ifelse(d$sex == 1, 1, 0) # Male 1, Female and other 0
 ```
 
 ```{r}
-id1 <- rename(Lazega_Attributes, c("ID"="ID1", "status"="status1", "gender"="gender1", "office"="office1", "seniority"="seniority1", "age"="age1", "practice"="practice1", "lawschool"="lawschool1"))
-
-id2 <- rename(Lazega_Attributes, c("ID"="ID2", "status"="status2", "gender"="gender2", "office"="office2", "seniority"="seniority2", "age"="age2", "practice"="practice2", "lawschool"="lawschool2"))
-all <- merge(Lazega_Edge_Undirected, id1, by = c("ID1"))
-all <- merge(all, id2, by = c("ID2"))
-head(all)
+summary(d$age)
+summary(d$educ)
 ```
+
+#### 4. Present your initial results from your first few models. What do they indicate about your hypothesis? 
 
 ```{r}
-all$homo_gender <- ifelse("all$gender1" == "all$gender2", 1, 0)
-all$homo_status <- ifelse("all$status1" == "all$status2", 1, 0)
-as.numeric.factor <- function(x){as.numeric(levels(x))[x]}
-all$ID1 <- as.numeric.factor(all$ID1)
-all$ID2 <- as.numeric.factor(all$ID2)
+lm1 <- lm(numgiven ~ happiness, data = d)
+summary(lm1)
 ```
+
+The coefficient of happiness is 0.122, (p value < 0.001). It shows a positive and significant relationship between `happy` and `numgiven`.  With 1 unit of increase in `happy`, people's network size increases by 0.122 on average. 
 
 ```{r}
-aggdata <- aggregate(all, by = list(all$ID1), FUN = mean, na.rm = TRUE)
-head(aggdata)
+lm2 <- lm(numgiven ~ happiness + age, data = d)
+summary(lm2)
 ```
 
-##### 2. Explain why you think these two variables should be related. 
+`age` also is a significant factor here. It seems the older people get, the smaller their network size. `happiness` is still significantly positively assocaited with `numgiven`. It's coefficient is 0.136 (p < 0.001). It shows that with each 1 unit of increase in `happiness`, peopel's network size increase by 0.136 on average, after controlling for `age`. 
 
-Degree centrality count the number of alters adjacent to ego, irrespective of direction and value of ties, and measures one's level of involvement or activity in the network. It's possible that if a person has higher degree centrality, which means  more connected to adjacent alters in the network, he or she would feel happier. 
+```{r}
+lm3 <- lm(numgiven ~ happiness + age + educ, data = d)
+summary(lm3)
+```
 
-##### 3. Tell me about your variables. What is your dependent variable? What are your independent variables? How are they coded? How are they recoded? How are they calculated, if appropriate? 
+In this model, after accounting for `age` and `educ`, we see that `happiness` is still a significant factor (p < 0.05). With each 1 unit of increase in `happiness`, people's network size increases by 0.09 on average, all else held equal. 
 
-Dependent variable _happy_ which measures general happiness.  
-Indepdent variable _degree_ which count the number of 
+The coefficient on `educ` is 0.112 (p < 0.001). Education is also a significant factor that's positively associated with people's network size. The higher the educaition level, the bigger their network size. 
 
-##### 4. Present your initial results from your first few models. What do they indicate about your hypothesis? 
+```{r}
+lm4 <- lm(numgiven ~ happiness + age + educ + gender, data = d)
+summary(lm4)
+```
 
-##### 5. Consider alternate specifications of your variables (i.e., recodings of various kinds). Consider interactions among your variables. 
+In this model, after adding `gender`, we see that `happiness` is still a significant factor that's positively associated with `numgiven`. With each 1 unit of increase in `happiness`, people's network size increases by 0.088 on average, after controlling for age, education, gender. 
 
-##### 6. Give your best conclusion as to whether your initial hypothesis held up, and if not, why not. 
+What's more, `gender` is a significant factor in affecting changes in `numgiven`. Being a male (`gender` == 1), decreases the network size by 0.14 on average, controlling for age, edcuation and happiness level. So males have less people whom they could talk to about matters important to them than females do. 
+
+
+```{r}
+lm5 <- lm(numgiven ~ happiness + age + educ + gender + realinc, data = d)
+summary(lm5)
+```
+
+In this model, I added `realinc`, which changed the landscape completely. In this full model, `happiness` is no longer a significant factor, once considered age, education, gender and income altogether.
+
+#### 5. Consider alternate specifications of your variables (i.e., recodings of various kinds). Consider interactions among your variables. 
+
+```{r}
+# recode income to make it more interpretable
+d$realinc10k <- d$realinc/10000
+lm6 <- lm(numgiven ~ happiness + age + educ + gender + realinc10k, data = d)
+summary(lm6)
+```
+
+As we could see here, the coefficient of `realinc10k` is 0.06 (p < 0.001). With each  10000$ increase on the family income, the network size of people increases by 0.06 on average, all other factors held constant. 
+
+In this case, `happiness` is coded as an ordinal variable, where 3 means very happy, 2 means pretty happy, and 1 means not too happy. The scale is quite small and the interval between each value is not exactly equal. So I'd like to recode it as a dummy variable `happiness_new`, with 1 happy, 0 not happy. 
+
+
+```{r}
+d$happiness_new <- ifelse(d$happiness == 1, 0, 1)
+lm7 <- lm(numgiven ~ happiness_new + age + educ + gender + realinc10k, data = d)
+summary(lm7)
+```
+
+Here, being happy will increase the network size by 0.063 on average than not happy, if all other factors were held constant, thought happiness is not a significant factor in this model still. 
+
+#### 6. Give your best conclusion as to whether your initial hypothesis held up, and if not, why not. 
+
+```{r}
+lm8 <- lm(numgiven ~ happiness_new + age + educ + gender, data = d)
+summary(lm8)
+```
+
+After removing `realinc10k`, `happiness_new` become slightly significant now. Being happy (`happiness_new` == 1) will increase the network size by 0.1167 on average, all else held equal. 
+
+Overall, it seems that happiness positively affects the network size, but only to a certain degree. 
