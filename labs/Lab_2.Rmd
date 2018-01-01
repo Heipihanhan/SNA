@@ -138,7 +138,7 @@ Degree has no effect on level of gender homophily, on average.
 
 #### 4. In either case, when you are done above, then considers alternate specifications of your variables and codings and decisions and models. What would you want to consider changing and why. If you can, report on what are the consequences of those changes?
 
-### Add other ego network measures in, like density
+Add other ego network measures in, like density
 ```{r}
 # calculate density of ego network
 dens <- data.frame(transitivity = transitivity(testmg, type = "local"))
@@ -155,8 +155,9 @@ head(aggdata, 10)
 summary(lm(homog ~ gender1 + V(testmg)$degree + transitivity, aggdata))
 ```
 
-5. Lastly, give your best conclusion as to what you learned from your analysis. Did it make sense, given your initial expectations? Why? Why not?
-Higher density has no effect on gender homophily either. 
+#### 5. Lastly, give your best conclusion as to what you learned from your analysis. Did it make sense, given your initial expectations? Why? Why not?
+
+It seems higher density has no effect on gender homophily either. 
 
 
 
