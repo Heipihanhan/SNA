@@ -1,20 +1,166 @@
 ---
 title: "Lab_02_QMSSG4062"
 author: "Jianghanhan Li"
-date: "3/28/2017"
+date: "3/21/2017"
 output: html_document
 ---
+
 Find a complete social network, preferably one with at least some attributes about the nodes with it. (If you simply have a social network, but no real attributes, you will need to pick an additional network to compare that first one to.)
 
-1. Describe the social network(s) to me, in terms of how it was collected, what it represents and so forth. Also give me basic topography of the network: the nature of the ties; direction of ties; overall density; and if attributes are with the network, the distribution of the categories and variables of those attributes.
+#### 1. Describe the social network(s) to me, in terms of how it was collected, what it represents and so forth. Also give me basic topography of the network: the nature of the ties; direction of ties; overall density; and if attributes are with the network, the distribution of the categories and variables of those attributes.
 
-2. Calculate degree centrality (in- and out-degree, too, if you have such data); closeness centrality; betweenness centrality; and eigenvector centrality. Correlate those measures of centrality. Highlight which nodes are most central and least central, along different dimensions. 
+This data set comes from a network study of corporate law partnership that was carried out in a Northeastern US corporate law firm, referred to as SG&R, 1988-1991 in New England. It includes (among others) measurements of networks among the 71 attorneys (partners and associates) of this firm, i.e. their strong-coworker network, advice network, friendship network, and indirect control networks. Various members' attributes are also part of the dataset, including seniority, formal status, office in which they work, gender, lawschool attended, individual performance measurements (hours worked, fees brought in), attitudes concerning various management policy options, etc.
 
-3. Now, do 1 of the following, but not both:
-   a.  If you have a network with attribute data, then state some hypothesis about how an attribute may be related to some (or all of the) measures of centrality. Explains why you think these two variables should be related. 
-  
-   b.  If you don’t have a network with attribute data, then pick another network to compare your first network against. Calculate all of the same measures as above for Network #2. Consider if normalization is appropriate for any of these measures. Then state some hypothesis about why some (or all of the) measures of centrality in one network will be the same or different from the second network. Explain why you think these two networks should be similar or different.
+This dataset was used to identify social processes such as bounded solidarity, lateral control, quality control, knowledge sharing, balancing powers, regulation, etc. among peers.It's undirected and unweighted. 
 
-4. In either case, when you are done above, then considers alternate specifications of your variables and codings and decisions and models. What would you want to consider changing and why. If you can, report on what are the consequences of those changes?
+```{r}
+library(igraph)
+```
+
+
+```{r}
+# import lazega network data 
+test <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Lazega_Friends.csv", header = TRUE, row.names = NULL, check.names = FALSE)
+# turn the dataframe into a matrix
+testm <- as.matrix(test)
+# turn matrix into a sociomatrix
+testmg <- graph.adjacency(testm, mode = "undirected", weighted = NULL)
+```
+
+```{r}
+# import lazega attribute data
+testatt <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Lazega_Attributes.csv")
+```
+
+#### 2. Calculate degree centrality (in- and out-degree, too, if you have such data); closeness centrality; betweenness centrality; and eigenvector centrality. Correlate those measures of centrality. Highlight which nodes are most central and least central, along different dimensions. 
+
+
+```{r}
+V(testmg)$name
+V(testmg)$status <- testatt$status[match(V(testmg)$name, testatt$ID)]
+V(testmg)$gender <- testatt$gender[match(V(testmg)$name, testatt$ID)]
+V(testmg)$office <- testatt$office[match(V(testmg)$name, testatt$ID)]
+V(testmg)$seniority <- testatt$seniority[match(V(testmg)$name, testatt$ID)]
+V(testmg)$age <- testatt$age[match(V(testmg)$name, testatt$ID)]
+V(testmg)$practice <- testatt$practice[match(V(testmg)$name, testatt$ID)]
+V(testmg)$lawschool <- testatt$lawschool[match(V(testmg)$name, testatt$ID)]
+```
+
+
+```{r}
+# Make an edge list to more easily calculate ego measures
+edge <- get.edgelist(testmg)
+require(devtools)
+source_gist(4676064)
+e <- as.data.frame(edge)
+```
+
+To capture the realtinships in undirected ties, we have to have the edgelist again. But reverse the order of the pairs; this will give us all the edges for each ego network. Otherwise, we would have only had half of them. 
+
+```{r}
+e2 <- e[c(2, 1)]
+library(plyr)
+
+# rename the columns to reflect the reverse order
+e2 <- rename(e2, c("V1" = "V2", "V2" = "V1"))
+
+# append the 2 edgelists together via rbind
+mydata <- rbind(e, e2)
+
+# rename columns of the edge list for later merging
+mydata <- rename(mydata, c("V1" = "ID1", "V2" = "ID2"))
+```
+
+Apply attributes to alter and ego and then merge
+
+```{r}
+# rename all the attributes to correspond with the pairs in the edgelist in ID1
+id1 <- rename(testatt, c("ID" = "ID1", "status" = "status1", "gender" = "gender1", "office" = "office1", "seniority" = "seniority1", "age" = "age1", "practice" = "practice1", "lawschool" = "lawschool1"))
+id2 <- rename(testatt, c("ID" = "ID2", "status" = "status2", "gender" = "gender2", "office" = "office2", "seniority" = "seniority2", "age" = "age2", "practice" = "practice2", "lawschool" = "lawschool2"))
+```
+
+```{r}
+# merge the ego and alter attributes together, first for ID1 and then for ID2
+all <- merge(mydata, id1, by = c("ID1"))
+all <- merge(all, id2, by = c("ID2"))
+head(all, 10)
+```
+
+### Make homophily measures
+```{r}
+# recode to reflect whether ego and alter share an attribute
+all$homog <- ifelse(all$gender1 == all$gender2, 1, 0)
+all$homos <- ifelse(all$status1 == all$status2, 1, 0)
+```
+
+### Make the homophilies
+
+```{r}
+# do this because the IDs are factors and we don't want them to be
+as.numeric.factor <- function(x) {as.numeric(levels(x))[x]}
+
+all$ID1 <- as.numeric.factor(all$ID1)
+all$ID2 <- as.numeric.factor(all$ID2)
+```
+
+```{r}
+# get an overall percentage by aggregated by ego's ID1
+aggdata <- aggregate(all, by = list(all$ID1), FUN = mean, na.rm = TRUE)
+
+```
+
+```{r}
+summary(lm(homog ~ as.factor(gender1), aggdata))
+```
+
+
+```{r}
+# calculate degree, ego network size
+V(testmg)$degree <- degree(testmg)
+V(testmg)$degree
+# do this to get degree attached to the big file
+dd <- data.frame(ID1 = V(testmg)$name)
+cb1 <- cbind(dd, V(testmg)$degree)
+aggdata <- merge(aggdata, cb1, by = c("ID1"))
+head(aggdata, 10)
+```
+
+
+#### 3. Now, do 1 of the following, but not both: a.  If you have a network with attribute data, then state some hypothesis about how an attribute may be related to some (or all of the) measures of centrality. Explains why you think these two variables should be related. 
+
+### Run a model, including degree
+
+```{r}
+summary(lm(homog ~ gender1 + V(testmg)$degree, aggdata))
+```
+
+Degree has no effect on level of gender homophily, on average. 
+
+#### 4. In either case, when you are done above, then considers alternate specifications of your variables and codings and decisions and models. What would you want to consider changing and why. If you can, report on what are the consequences of those changes?
+
+### Add other ego network measures in, like density
+```{r}
+# calculate density of ego network
+dens <- data.frame(transitivity = transitivity(testmg, type = "local"))
+
+# do this to get density added into file
+dd <- data.frame(ID1 = V(testmg)$name)
+cb2 <- cbind(dd, dens)
+aggdata <- merge(aggdata, cb2, by = c("ID1"))
+head(aggdata, 10)
+```
+
+
+```{r}
+summary(lm(homog ~ gender1 + V(testmg)$degree + transitivity, aggdata))
+```
 
 5. Lastly, give your best conclusion as to what you learned from your analysis. Did it make sense, given your initial expectations? Why? Why not?
+Higher density has no effect on gender homophily either. 
+
+
+
+
+
+
+
