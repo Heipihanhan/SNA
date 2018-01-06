@@ -4,14 +4,185 @@ author: "Jianghanhan Li"
 date: "5/9/2017"
 output: html_document
 ---
+
 Find a complete social network, preferably one with at least some attributes about the nodes with it.
 
-#####1. Describe the social network(s) to me, in terms of how it was collected, what it represents and so forth. Also give me basic topography of the network: the nature of the ties; direction of ties; overall density; and if attributes are with the network, the distribution of the categories and variables of those attributes.
+##### 1. Describe the social network(s) to me, in terms of how it was collected, what it represents and so forth. Also give me basic topography of the network: the nature of the ties; direction of ties; overall density; and if attributes are with the network, the distribution of the categories and variables of those attributes.
 
-#####2. Run the Girvan-Newman community detection algorithm. Then run the random walk community detection algorithm.
+This is a network of U.S. mainstream newspapers and TV stations. The nature of the ties is their interactions, through mentions and hyperlinks. 
 
-#####3. Tell me how many groups each algorithm finds. Analyze how similar the two partitioning algorithms are in terms of putting nodes into groups with each other.
+```{r}
+nodes <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Media-NODES.csv", header = T, as.is = T)
+edges <- read.csv("~/Dropbox/Columbia_QMSS/Spring2017/Social_Network_Analysis/Data/Media-EDGES.csv", header = T, as.is = T)
+```
 
-#####4. Visualize the network (either in R or Gephi), coloring the nodes by either Girvan-Newman grouping or the random walk grouping.
+See more details about the variables below. 
+```{r}
+head(nodes)
+head(edges)
+```
 
-#####5. Tell me anything else about whether the partitioning makes sense, based on attributes or who the nodes are, and so on.
+```{r}
+str(nodes)
+str(edges)
+```
+
+```{r}
+num_nodes <-length(unique(nodes$id))
+nrow(unique(edges[, c("from", "to")]))
+```
+
+The original netwrok is directed and weighted. But some nodes are linked by multiple ties in between. I am going to collapse the same ties between two nodes and sum the weightes. 
+
+```{r}
+edges <- aggregate(edges[,3], edges[, -3], sum)
+edges <- edges[order(edges$from, edges$to),]
+colnames(edges)[4] <- "weight"
+rownames(edges) <- NULL
+head(edges)
+```
+
+```{r}
+library(igraph)
+media_network <- graph_from_data_frame(d = edges, vertices = nodes, directed = T)
+media_network
+```
+
+The media organizations are the followings:
+
+```{r}
+V(media_network)$media
+```
+
+```{r}
+plot(media_network, edge.arrow.size = 0.5, vertex.label = NA)
+```
+
+To simplify the network, I will remove the loops.
+
+```{r}
+media_network <- simplify(media_network, remove.multiple = F, remove.loops = T)
+plot(media_network, edge.arrow.size = 0.4, vertex.label = V(media_network)$media, vertex.label.color = "black", vertex.label.cex = 0.8)
+```
+
+**Density**
+
+```{r}
+ecount(media_network)/(vcount(media_network)*(vcount(media_network)-1))
+```
+
+The density of the network is 0.176. 
+
+**Distribution of Degrees**
+
+```{r}
+degree_distribution(media_network, cumulative = TRUE, mode = "all")
+```
+
+##### 2. Run the Girvan-Newman community detection algorithm. Then run the random walk community detection algorithm.
+
+Transform the current network to an undirected network 
+
+```{r}
+media_network_new <- as.undirected(media_network, mode = "collapse", edge.attr.comb = list(weight = "sum", "ignore"))
+```
+
+
+**Girvan-Newman community detection algorithm**
+
+```{r}
+cluster_eb <- cluster_edge_betweenness(media_network_new, bridges = TRUE, modularity = TRUE, membership = TRUE)
+dendPlot(cluster_eb, mode = "hclust")
+```
+
+```{r}
+cluster_eb
+```
+
+```{r}
+length(cluster_eb)
+```
+
+There are five number of communities. 
+
+**Random walk community detection algorithm**
+
+```{r}
+random_walk_cd <- walktrap.community(media_network_new, steps = 200, modularity = TRUE)
+random_walk_cd
+```
+
+
+```{r}
+length(random_walk_cd)
+```
+There are 4 communities detected. 
+
+```{r}
+membership(cluster_eb)
+```
+
+
+```{r}
+membership(random_walk_cd)
+```
+
+The similarity between the two algorithms lies in the categorazation of these groups (12, 13, 14), (10, 09, 08, 07) and (01, 02, 03).
+
+```{r}
+gn <- data.frame(cluster_eb$membership)
+rw <- data.frame(random_walk_cd$membership)
+dd <- cbind(gn, rw)
+cor(dd)
+```
+
+The covariance of the two memberships is about 0.58. 
+
+##### 3. Tell me how many groups each algorithm finds. Analyze how similar the two partitioning algorithms are in terms of putting nodes into groups with each other.
+
+** Girvan-Newman Model**
+
+```{r}
+modularity(cluster_eb)
+```
+
+The modularity 0.435 is pretty high, which suggests dense communities within community and sparse connections in between communities.
+
+** Random Walk Model**
+
+```{r}
+modularity(random_walk_cd)
+```
+
+Here the modularity is 0.597, higher than that of the Girvan-Newman algorithm's. We prefer a larger value of modulairty when it comes to searching for community structure. So the random walk community detection algorithm performs better here. 
+
+##### 4. Visualize the network (either in R or Gephi), coloring the nodes by either Girvan-Newman grouping or the random walk grouping.
+
+```{r}
+plot(cluster_eb, media_network_new, vertex.label = V(media_network)$media, vertex.label.color = "black", vertex.label.cex = 0.8)
+```
+
+```{r}
+plot(random_walk_cd, media_network_new, vertex.label = V(media_network)$media, vertex.label.color = "black", vertex.label.cex = 0.8)
+```
+
+##### 5. Tell me anything else about whether the partitioning makes sense, based on attributes or who the nodes are, and so on.
+
+The partitioning does make some sense, especially that of the random walk community detection algorithm. As we could see from the above graph, FOX News, ABC, MSNBC, CNN are all cable networks. Yahoo News, Reuters and Google News are the news aggregators and heavy on the Internet. The other communities are less obvious but we could see the comparison on their audience size. 
+
+```{r}
+rw_new <- data.frame(random_walk_cd$names, random_walk_cd$membership)
+rw_new
+dd_new <- cbind(nodes, rw_new)
+dd_new$random_walk_cd.membership <- as.factor(dd_new$random_walk_cd.membership) # convert real number to factor for visualization later
+```
+
+```{r}
+library(ggplot2)
+gg <- ggplot(dd_new, aes(x = reorder(media, -audience.size), y = audience.size, fill = random_walk_cd.membership))
+gg <- gg + geom_bar(stat = "identity", width = 0.8) + 
+  theme(text = element_text(size = 10), axis.text.x = element_text(angle = 20, hjust = 1)) 
+gg
+
+```
+
